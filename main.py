@@ -49,14 +49,16 @@ class MatrixFactorizer():
     np.random.seed(1)
 
     self.matrix = matrix
-    self.users = np.random.normal(scale=1/num_features, size=(len(matrix), num_features))
-    self.items = np.random.normal(scale=1/num_features, size=(num_features, len(matrix[0])))
+    self.users = np.random.rand(len(matrix), num_features)
+    self.items = np.random.rand(num_features, len(matrix[0]))
 
     self.training_set = []
 
     for u in range(len(self.users)):
       for i in range(len(self.items.T)):
-        self.training_set.append((self.users[u], self.items.T[i], self.matrix[u][i]))
+        if(matrix[u][i] == 0):
+          continue
+        self.training_set.append((u, i, self.matrix[u][i]))
 
   def display_matrices(self):
     """
@@ -103,23 +105,25 @@ class MatrixFactorizer():
   def SGD(self, training):
     errors = []
 
+    users = np.copy(self.users)
+    items = np.copy(self.items)
+
     for element in training:
       user, item, actual = element
 
-      user_rating = np.dot(user.T, item)
+      user_rating = np.dot(self.users[user].T, self.items.T[item])
 
       error = self.get_error(actual, user_rating)
 
       errors.append(error)
 
-      for u in range(len(self.users)):
-        for i in range(len(self.items)):
-          for k in range(self.num_features):
-            uc = np.copy(self.users)
-            self.users[u][k] += self.learning_rate * (error * self.items[k][i] - self.reg * self.users[u][k])
-            self.items[k][i] += self.learning_rate * (error * uc[u][k] - self.reg * self.items[k][i])
+      uc = np.copy(users)
 
-    return errors
+      for k in range(self.num_features):
+        users[user][k] += self.learning_rate * (error * items[k][item] - self.reg * users[user][k])
+        items[k][item] += self.learning_rate * (error * uc[user][k] - self.reg * items[k][item])
+ 
+    return (errors, users, items)
 
   def SSE(self, errors):
     sum_of_squared_error = 0.0
@@ -138,36 +142,34 @@ class MatrixFactorizer():
 
     training_index = int(math.floor(len(training_set) * 0.7))
 
-    user_out = np.copy(self.users)
-    item_out = np.copy(self.items)
-
     training, validation = training_set[:training_index], training_set[training_index:]
 
     current_RMSE = float('inf')
     iterations_of_no_decrease = 0
     loss = []
-    it = 0
+
+    loss.append(current_RMSE)
 
     while True:
       if iterations_of_no_decrease > 1:
         break
 
-      errors = self.SGD(training)
+      errors, u, i = self.SGD(training)
 
       sum_of_squared_error = self.SSE(errors)
       root_mean_squared_error = self.RMSE(sum_of_squared_error, len(validation))
 
       if len(loss) > 0 and root_mean_squared_error < min(loss):
-        user_out = np.copy(users)
-        item_out = np.copy(items)
+        self.users = u
+        self.items = i
 
       if root_mean_squared_error >= current_RMSE:
-        iterations_of_no_decrease = 0
-      else:
         iterations_of_no_decrease += 1
+      else:
+        iterations_of_no_decrease = 0
 
-    self.users = user_out
-    self.items = item_out
+      current_RMSE = root_mean_squared_error
+      loss.append(root_mean_squared_error)
 
 if __name__ == '__main__':
   if len(sys.argv) > 1 and not re.match('[A-Za-z0-9_]+[.][c][s][v]', sys.argv[1]):
@@ -175,13 +177,13 @@ if __name__ == '__main__':
   elif len(sys.argv) > 1:
     file_name = sys.argv[1]
     num_features = 2
-    learning_rate = 0.01
+    learning_rate = 0.1
 
     csv_file, file_exists = read_csv(file_name)
 
     if file_exists:
       matrix = generate_matrix(csv_file)
 
-      mf = MatrixFactorizer(matrix, learning_rate, 1, num_features)
+      mf = MatrixFactorizer(matrix, learning_rate, 0.01, num_features)
       mf.train()
       mf.display_matrices()
