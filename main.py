@@ -49,6 +49,10 @@ class MatrixFactorizer():
     np.random.seed(1)
 
     self.matrix = matrix
+
+    #self.users = np.random.normal(scale=(1/num_features), size=(len(matrix), num_features))
+    #self.items = np.random.normal(scale=(1/num_features), size=(num_features, len(matrix[0])))
+
     self.users = np.random.rand(len(matrix), num_features)
     self.items = np.random.rand(num_features, len(matrix[0]))
 
@@ -108,6 +112,8 @@ class MatrixFactorizer():
     users = np.copy(self.users)
     items = np.copy(self.items)
 
+    it = 0
+
     for element in training:
       user, item, actual = element
 
@@ -122,7 +128,8 @@ class MatrixFactorizer():
       for k in range(self.num_features):
         users[user][k] += self.learning_rate * (error * items[k][item] - self.reg * users[user][k])
         items[k][item] += self.learning_rate * (error * uc[user][k] - self.reg * items[k][item])
- 
+
+      it += 1
     return (errors, users, items)
 
   def SSE(self, errors):
@@ -150,7 +157,9 @@ class MatrixFactorizer():
 
     loss.append(current_RMSE)
 
+    it = 0
     while True:
+      print(it)
       if iterations_of_no_decrease > 1:
         break
 
@@ -170,6 +179,7 @@ class MatrixFactorizer():
 
       current_RMSE = root_mean_squared_error
       loss.append(root_mean_squared_error)
+      it += 1
 
 if __name__ == '__main__':
   if len(sys.argv) > 1 and not re.match('[A-Za-z0-9_]+[.][c][s][v]', sys.argv[1]):
@@ -177,7 +187,7 @@ if __name__ == '__main__':
   elif len(sys.argv) > 1:
     file_name = sys.argv[1]
     num_features = 2
-    learning_rate = 0.1
+    learning_rate = 0.01
 
     csv_file, file_exists = read_csv(file_name)
 
