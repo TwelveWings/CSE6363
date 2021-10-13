@@ -5,7 +5,9 @@ import re
 import sys
 
 def read_csv(file_name):
-  
+  """
+  Reads a given CSV file.
+  """
   csv_data = []
 
   try:
@@ -22,6 +24,9 @@ def read_csv(file_name):
     return (csv_data, False)
 
 def generate_matrix(csv_data):
+  """
+  Generates a matrix from a given CSV file.
+  """
   matrix = []
   matrixRow = []
 
@@ -41,6 +46,9 @@ def generate_matrix(csv_data):
 
 
 class MatrixFactorizer():
+  """
+  Class for performing matrix factorization.
+  """
   def __init__(self, matrix, learning_rate, regularization, num_features):
     self.learning_rate = learning_rate
     self.reg = regularization
@@ -87,6 +95,10 @@ class MatrixFactorizer():
     print(self.matrix)
 
   def get_error(self, actual_score, estimation):
+    """
+    Subtracts the estimation from the actua score to determine the
+    error.
+    """
     return actual_score - estimation
 
   def get_predicted_matrix(self):
@@ -104,15 +116,19 @@ class MatrixFactorizer():
     return predicted_matrix
 
   def RMSE(self, sum_of_squared_error, cardinality):
+    """
+    Finds the root mean squared error
+    """
     return np.sqrt(sum_of_squared_error / cardinality)
 
   def SGD(self, training):
+    """
+    Runs stochastic gradient descent
+    """
     errors = []
 
     users = np.copy(self.users)
     items = np.copy(self.items)
-
-    it = 0
 
     for element in training:
       user, item, actual = element
@@ -129,10 +145,12 @@ class MatrixFactorizer():
         users[user][k] += self.learning_rate * (error * items[k][item] - self.reg * users[user][k])
         items[k][item] += self.learning_rate * (error * uc[user][k] - self.reg * items[k][item])
 
-      it += 1
     return (errors, users, items)
 
   def SSE(self, errors):
+    """
+    Finds the sum of squares error.
+    """
     sum_of_squared_error = 0.0
 
     for error in errors:
@@ -141,6 +159,9 @@ class MatrixFactorizer():
     return sum_of_squared_error
 
   def train(self):
+    """
+    Trains the model based on algorithm in paper by Takács et. al.
+    """
     training_set = self.training_set
     users = self.users
     items = self.items
@@ -157,9 +178,7 @@ class MatrixFactorizer():
 
     loss.append(current_RMSE)
 
-    it = 0
     while True:
-      print(it)
       if iterations_of_no_decrease > 1:
         break
 
@@ -179,7 +198,6 @@ class MatrixFactorizer():
 
       current_RMSE = root_mean_squared_error
       loss.append(root_mean_squared_error)
-      it += 1
 
 if __name__ == '__main__':
   if len(sys.argv) > 1 and not re.match('[A-Za-z0-9_]+[.][c][s][v]', sys.argv[1]):
