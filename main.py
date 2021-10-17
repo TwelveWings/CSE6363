@@ -58,16 +58,13 @@ class MatrixFactorizer():
 
     self.matrix = matrix
 
-    #self.users = np.random.normal(scale=(1/num_features), size=(len(matrix), num_features))
-    #self.items = np.random.normal(scale=(1/num_features), size=(num_features, len(matrix[0])))
-
-    self.users = np.random.rand(len(matrix), num_features)
-    self.items = np.random.rand(num_features, len(matrix[0]))
+    self.users = np.random.normal(scale=(1/num_features), size=(len(matrix), num_features))
+    self.items = np.random.normal(scale=(1/num_features), size=(len(matrix[0]), num_features))
 
     self.training_set = []
 
     for u in range(len(self.users)):
-      for i in range(len(self.items.T)):
+      for i in range(len(self.items)):
         if(matrix[u][i] == 0):
           continue
         self.training_set.append((u, i, self.matrix[u][i]))
@@ -78,8 +75,8 @@ class MatrixFactorizer():
     """
     # Print input matrix, factored user matrix, and factored item matrix    
     print("\nITEM MATRIX:\n")
-    print(self.items.T.shape)
-    print(self.items.T)
+    print(self.items.shape)
+    print(self.items)
 
     print("\nUSER MATRIX:\n")
     print(self.users.shape)
@@ -96,7 +93,7 @@ class MatrixFactorizer():
 
   def get_error(self, actual_score, estimation):
     """
-    Subtracts the estimation from the actua score to determine the
+    Subtracts the estimation from the actual score to determine the
     error.
     """
     return actual_score - estimation
@@ -105,13 +102,11 @@ class MatrixFactorizer():
     """
     Based on the user and item matrices, creates a prediction matrix.
     """
-    predicted_matrix = np.zeros((len(self.users), len(self.items.T)))
-
-    print(predicted_matrix.shape)
+    predicted_matrix = np.zeros((len(self.users), len(self.items)))
 
     for u in range(len(self.users)):
-      for i in range(len(self.items.T)):
-        predicted_matrix[u][i] = np.dot(self.users[u].T, self.items.T[i])
+      for i in range(len(self.items)):
+        predicted_matrix[u][i] = np.dot(self.users[u].T, self.items[i])
 
     return predicted_matrix
 
@@ -133,17 +128,22 @@ class MatrixFactorizer():
     for element in training:
       user, item, actual = element
 
-      user_rating = np.dot(self.users[user].T, self.items.T[item])
+      # Determine the user rating by taking the dot product of user 
+      # and item matrices.
+      user_rating = np.dot(self.users[user].T, self.items[item])
 
       error = self.get_error(actual, user_rating)
 
+      # Save error to list
       errors.append(error)
 
+      # Copy users matrix so that updates values do not affect update to items matrix.
       uc = np.copy(users)
 
+      # Update the user and item matrices for each feature.
       for k in range(self.num_features):
-        users[user][k] += self.learning_rate * (error * items[k][item] - self.reg * users[user][k])
-        items[k][item] += self.learning_rate * (error * uc[user][k] - self.reg * items[k][item])
+        users[user][k] += self.learning_rate * (error * items[item][k] - self.reg * users[user][k])
+        items[item][k] += self.learning_rate * (error * uc[user][k] - self.reg * items[item][k])
 
     return (errors, users, items)
 
@@ -163,13 +163,13 @@ class MatrixFactorizer():
     Trains the model based on algorithm in paper by Takács et. al.
     """
     training_set = self.training_set
-    users = self.users
-    items = self.items
 
+    # Randomize data set
     np.random.shuffle(training_set)
 
     training_index = int(math.floor(len(training_set) * 0.7))
 
+    # Split data set into training set and validation set
     training, validation = training_set[:training_index], training_set[training_index:]
 
     current_RMSE = float('inf')
@@ -178,18 +178,21 @@ class MatrixFactorizer():
 
     loss.append(current_RMSE)
 
+    # Loop until RMSE has not decreased for two iterations.
     while True:
       if iterations_of_no_decrease > 1:
         break
 
-      errors, u, i = self.SGD(training)
+      errors, users, items = self.SGD(training)
 
       sum_of_squared_error = self.SSE(errors)
       root_mean_squared_error = self.RMSE(sum_of_squared_error, len(validation))
 
+      # If the lost list is not empty and the current RMSE calculated is less
+      # than the minimum loss recorded thsu far, update self.users and self.items
       if len(loss) > 0 and root_mean_squared_error < min(loss):
-        self.users = u
-        self.items = i
+        self.users = users
+        self.items = items
 
       if root_mean_squared_error >= current_RMSE:
         iterations_of_no_decrease += 1
@@ -200,6 +203,7 @@ class MatrixFactorizer():
       loss.append(root_mean_squared_error)
 
 if __name__ == '__main__':
+  # If a file with a csv extension is not specified matrix factorization cannot begin.
   if len(sys.argv) > 1 and not re.match('[A-Za-z0-9_]+[.][c][s][v]', sys.argv[1]):
     print("Invalid CSV file specified. Please specify a valid CSV file.")
   elif len(sys.argv) > 1:
