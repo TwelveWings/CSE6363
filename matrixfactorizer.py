@@ -84,9 +84,8 @@ class MatrixFactorizer():
 
       # Determine the user rating by taking the dot product of user 
       # and item matrices.
-      user_rating = np.dot(self.users[user].T, self.items[item])
       bias = self.avg_rating + self.u_bias[user] + self.i_bias[item]
-      user_rating += bias
+      user_rating = np.dot(self.users[user].T, self.items[item]) + bias
 
       error = actual - user_rating
 
