@@ -67,9 +67,7 @@ if __name__ == '__main__':
         print("Invalid number of iterations specified. Iterations must be a positive integer. Process has defaulted to 2500 iterations.")
 
     csv_file, file_exists = read_csv(file_name)
-
-    print(max_iteration)
-
+    
     if file_exists:
       matrix = generate_matrix(csv_file)
 
