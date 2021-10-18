@@ -104,7 +104,7 @@ class MatrixFactorizer():
         self.users[user][k] += self.learning_rate * (error * self.items[item][k] - self.reg * self.users[user][k])
         self.items[item][k] += self.learning_rate * (error * uc[user][k] - self.reg * self.items[item][k])
 
-    return (SSE, users, items)
+    return SSE
 
   def train(self):
     """
@@ -125,7 +125,7 @@ class MatrixFactorizer():
       if iterations_of_no_decrease > 1 or iterations == self.max_iterations:
         break
 
-      error, users, items = self.SGD(training_set)
+      error = self.SGD(training_set)
 
       root_mean_squared_error = self.RMSE(error, len(training_set))
 
