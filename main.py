@@ -3,7 +3,6 @@ import math
 import numpy as np
 import re
 import sys
-import time
 
 def read_csv(file_name):
   """
@@ -136,8 +135,8 @@ class MatrixFactorizer():
 
       # Update the user and item matrices for each feature.
       for k in range(self.num_features):
-          users[user][k] += self.learning_rate * (error * items[item][k] - self.reg * users[user][k])
-          items[item][k] += self.learning_rate * (error * uc[user][k] - self.reg * items[item][k])
+        users[user][k] += self.learning_rate * (error * items[item][k] - self.reg * users[user][k])
+        items[item][k] += self.learning_rate * (error * uc[user][k] - self.reg * items[item][k])
 
     return (SSE, users, items)
 
@@ -198,7 +197,6 @@ class MatrixFactorizer():
       iterations += 1
 
 if __name__ == '__main__':
-  start = time.time()
   # If a file with a csv extension is not specified matrix factorization cannot begin.
   if len(sys.argv) > 1 and not re.match('[A-Za-z0-9_]+[.][c][s][v]', sys.argv[1]):
     print("Invalid CSV file specified. Please specify a valid CSV file.")
@@ -214,6 +212,4 @@ if __name__ == '__main__':
 
       mf = MatrixFactorizer(matrix, learning_rate, 0.001, num_features)
       mf.train()
-      end = time.time()
       mf.display_matrices()
-      print(end - start)
