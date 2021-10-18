@@ -16,8 +16,7 @@ Once the data set is created, it is shuffled and split into a training and valid
 
  RMSE = sqrt(SSE / |validation set|)
 
- SSE is just the sum of all the squared errors; RMSE is the square root of the SSE divided by the    
- cardinality of the validation set.
+ SSE is just the sum of all the squared errors; RMSE is the square root of the SSE divided by the cardinality of the validation set.
 
 6) The process repeats until the RMSE has not decreased for two iterations or 5000 iterations have passed.
 
@@ -29,4 +28,6 @@ Depending on your environment, you may be able to run it using:
 
 python main.py <csv_file>.csv
 
-Please note that <csv_file> must be a valid file name and it must have the extension .csv; otherwise, the program will not run, providing a message explaining the issue. Once the program is executed, it will display the final user matrix, item matrix, the predicted matrix and the actual (input) matrix.
+<csv_file> must be a valid file name and it must have the extension .csv; otherwise, the program will not run. 
+
+Once the program is finished executing, it will display the final user matrix, item matrix, the predicted matrix and the actual (input) matrix.
