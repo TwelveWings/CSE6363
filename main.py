@@ -91,13 +91,6 @@ class MatrixFactorizer():
     print(self.matrix.shape)
     print(self.matrix)
 
-  def get_error(self, actual_score, estimation):
-    """
-    Subtracts the estimation from the actual score to determine the
-    error.
-    """
-    return actual_score - estimation
-
   def get_predicted_matrix(self):
     """
     Based on the user and item matrices, creates a prediction matrix.
@@ -120,7 +113,7 @@ class MatrixFactorizer():
     """
     Runs stochastic gradient descent
     """
-    errors = []
+    SSE = 0.0
 
     users = np.copy(self.users)
     items = np.copy(self.items)
@@ -132,10 +125,10 @@ class MatrixFactorizer():
       # and item matrices.
       user_rating = np.dot(self.users[user].T, self.items[item])
 
-      error = self.get_error(actual, user_rating)
+      error = actual - user_rating
 
-      # Save error to list
-      errors.append(error)
+      # Calculate sum of squared error
+      SSE += (error * error)
 
       # Copy users matrix so that updates values do not affect update to items matrix.
       uc = np.copy(users)
@@ -145,7 +138,7 @@ class MatrixFactorizer():
         users[user][k] += self.learning_rate * (error * items[item][k] - self.reg * users[user][k])
         items[item][k] += self.learning_rate * (error * uc[user][k] - self.reg * items[item][k])
 
-    return (errors, users, items)
+    return (SSE, users, items)
 
   def SSE(self, errors):
     """
@@ -167,30 +160,30 @@ class MatrixFactorizer():
     # Randomize data set
     np.random.shuffle(training_set)
 
-    training_index = int(math.floor(len(training_set) * 0.7))
+    training_index = int(math.floor(len(training_set) * 0.8))
 
     # Split data set into training set and validation set
     training, validation = training_set[:training_index], training_set[training_index:]
 
     current_RMSE = float('inf')
     iterations_of_no_decrease = 0
-    loss = []
-
-    loss.append(current_RMSE)
+    iterations = 0
+    max_iterations = 1000
+    min_loss = float('inf')
 
     # Loop until RMSE has not decreased for two iterations.
     while True:
-      if iterations_of_no_decrease > 1:
+      if iterations_of_no_decrease > 1 or iterations == max_iterations:
         break
 
-      errors, users, items = self.SGD(training)
+      error, users, items = self.SGD(training)
 
-      sum_of_squared_error = self.SSE(errors)
-      root_mean_squared_error = self.RMSE(sum_of_squared_error, len(validation))
+      root_mean_squared_error = self.RMSE(error, len(validation))
 
-      # If the lost list is not empty and the current RMSE calculated is less
-      # than the minimum loss recorded thsu far, update self.users and self.items
-      if len(loss) > 0 and root_mean_squared_error < min(loss):
+      # If the current RMSE calculated is less than the minimum loss, 
+      # update self.users and self.items
+      if root_mean_squared_error < min_loss:
+        min_loss = root_mean_squared_error
         self.users = users
         self.items = items
 
@@ -200,7 +193,8 @@ class MatrixFactorizer():
         iterations_of_no_decrease = 0
 
       current_RMSE = root_mean_squared_error
-      loss.append(root_mean_squared_error)
+
+      iterations += 1
 
 if __name__ == '__main__':
   # If a file with a csv extension is not specified matrix factorization cannot begin.
@@ -209,13 +203,13 @@ if __name__ == '__main__':
   elif len(sys.argv) > 1:
     file_name = sys.argv[1]
     num_features = 2
-    learning_rate = 0.01
+    learning_rate = 0.001
 
     csv_file, file_exists = read_csv(file_name)
 
     if file_exists:
       matrix = generate_matrix(csv_file)
 
-      mf = MatrixFactorizer(matrix, learning_rate, 0.01, num_features)
+      mf = MatrixFactorizer(matrix, learning_rate, 0.001, num_features)
       mf.train()
       mf.display_matrices()
