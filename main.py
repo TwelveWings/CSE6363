@@ -52,10 +52,23 @@ if __name__ == '__main__':
   elif len(sys.argv) > 1:
     file_name = sys.argv[1]
     num_features = 2
-    max_iteration = 5000
+    max_iteration = 2500
     learning_rate = 0.001
 
+    # If a second argument is provided to the execution command, it must be an integer value specifying the number of iterations.
+    # Any iterations less than 1 are invalid.
+    if len(sys.argv) > 2:
+      try:
+        if(int(sys.argv[2]) < 1):
+          raise ValueError
+
+        max_iteration = int(sys.argv[2])
+      except:
+        print("Invalid number of iterations specified. Iterations must be a positive integer. Process has defaulted to 2500 iterations.")
+
     csv_file, file_exists = read_csv(file_name)
+
+    print(max_iteration)
 
     if file_exists:
       matrix = generate_matrix(csv_file)
