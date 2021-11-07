@@ -50,13 +50,16 @@ def get_movies_user_watched_in_genres(user_id, user_index, movie_indices, rating
   for preference in preferences[:4]:
     preferred_genres.add(preference[0])
 
-  for i in range(user_index[user_id][0], user_index[user_id][1] + 1):
-    index = movie_indices[ratings[i].movie_id]
-    for mg in movies[index].genre.split('|'):
-      if mg in preferred_genres:
-        movies_watched_in_genres.add(ratings[i].movie_id)
-        movie_watched_ratings[ratings[i].movie_id] = ratings[i].rating
-        break
+  try:
+    for i in range(user_index[user_id][0] - 1, user_index[user_id][1]):
+      index = movie_indices[ratings[i].movie_id]
+      for mg in movies[index].genre.split('|'):
+        if mg in preferred_genres:
+          movies_watched_in_genres.add(ratings[i].movie_id)
+          movie_watched_ratings[ratings[i].movie_id] = ratings[i].rating
+          break
+  except:
+    print("get_movies_user_watched_in_genres() : user_id: %s" % str(user_id))
 
   return (movies_watched_in_genres, movie_watched_ratings)
 
@@ -78,11 +81,14 @@ def find_similar_user_ratings(u_ids, u_id, user_index, ratings, movies_watched):
     total_movies_watched_by_other = 0
     total_similar_ratings = 0
 
-    for i in range(user_index[user][0], user_index[user][1] + 1):
-      if ratings[i].movie_id in movies_watched:
-        total_movies_watched_by_other += 1
-        user_watched.add(ratings[i].movie_id)
-        user_ratings[ratings[i].movie_id] = ratings[i].rating
+    try:
+      for i in range(user_index[user][0] - 1, user_index[user][1]):
+        if ratings[i].movie_id in movies_watched:
+          total_movies_watched_by_other += 1
+          user_watched.add(ratings[i].movie_id)
+          user_ratings[ratings[i].movie_id] = ratings[i].rating
+    except:
+      print("find_similar_user_ratings() : user: %s" % str(user))
 
     if float(total_movies_watched_by_other) >= len(movies_watched) * .7:
       recommenders.append((user, user_watched, user_ratings))
@@ -90,9 +96,7 @@ def find_similar_user_ratings(u_ids, u_id, user_index, ratings, movies_watched):
   return recommenders
 
 def get_movies_based_on_preference(movies, preferences):
-  top5 = preferences[:4]
-
-  top5_genres = set([preference[0] for preference in top5])
+  top5_genres = set([preference[0] for preference in preferences])
 
   movies_in_top5 = set([])
 
@@ -104,7 +108,7 @@ def get_movies_based_on_preference(movies, preferences):
 
   return movies_in_top5
 
-def generate_matrix(u_index, u_id, recommenders, preferences, movies_in_top5, movies_watched, ratings):
+def generate_matrix(u_index, u_id, recommenders, movies_in_top5, movies_watched, ratings):
   """
   Generates a matrix from a given CSV file.
   """
@@ -142,31 +146,6 @@ def generate_matrix(u_index, u_id, recommenders, preferences, movies_in_top5, mo
 
   matrix = np.array(matrix)
 
-  """
-  for movie in list_of_movies:
-    print(movie)
-    print(movies_watched)
-    try:
-      matrix_row.append(movies_watched[movie])
-    except:
-      movies_not_watched.add(movie)
-
-  matrix.append(matrix_row)
-
-  for i in range(10):
-    matrix_row = []
-    if i == 9:
-      break
-    for j in range(len(movies_in_top5)):
-      try:
-        matrix_row.append(recommenders[i][2][list_of_movies[j]])
-      except:
-        matrix_row.append(0)
-
-    matrix.append(matrix_row)
-
-  matrix = np.array(matrix)
-  """
   return (matrix, movies_not_watched, movies_not_watched_index)
 
 if __name__ == '__main__':
@@ -175,10 +154,10 @@ if __name__ == '__main__':
   print("Loading users...")
   ratings, user_indices, rating_file_exists = read_rating_csv("ratings.csv")
 
-  user_ids = [i for i in range(ratings[-1].user_id)]
+  user_ids = [i for i in range(1, ratings[-1].user_id)]
 
   while(True):
-    print("Please enter user ID or enter '-1' to quit: ")
+    print("\nPlease enter user ID or enter '-1' to quit: ")
 
     try:
       user_id = int(input())
@@ -189,34 +168,40 @@ if __name__ == '__main__':
     if user_id == -1:
       print("Program terminated.")
       break
+    elif user_id < -1 or user_id > len(user_ids):
+      print("Invalid ID. Please try again.")
+      continue
 
     print("Loading preferences...\n")
+
+#    print(user_indices[user_id])
 
     preferences = determine_user_preferences(
       user_id, user_indices, movie_indices, ratings, movies, genres)
 
+    top5Genres = preferences[:5]
+
     movies_watched_in_genres, movie_watched_ratings = get_movies_user_watched_in_genres(
-      user_id, user_indices, movie_indices, ratings, movies, preferences)
+      user_id, user_indices, movie_indices, ratings, movies, top5Genres)
+
+#    print(top5Genres)
 
     print("Top 5 genres for ID %s" % str(user_id))
 
     i = 0
-    for preference in preferences:
-      if i > 4:
-        break
-
+    for preference in top5Genres:
       print("%s) %s" % (str(i + 1), str(preference[0])))
       i += 1
 
-    movies_in_top5 = get_movies_based_on_preference(movies, preferences)
+    movies_in_top5 = get_movies_based_on_preference(movies, top5Genres)
 
     recommenders = find_similar_user_ratings(
       user_ids, user_id, user_indices, ratings, movies_watched_in_genres)
 
     print("Generating prediction matrix...\n")
     matrix, movies_not_watched, not_watched_index = generate_matrix(
-      user_indices, user_id, recommenders, preferences, movies_in_top5, 
-      movie_watched_ratings, ratings)
+      user_indices, user_id, recommenders, movies_in_top5, movie_watched_ratings, 
+      ratings)
 
     print("Matrix factorization...\n")
     mf = MatrixFactorizer(matrix, 0.001, 0.001, 2, 2500)
@@ -230,6 +215,7 @@ if __name__ == '__main__':
     print("Recommendations:")
     while(recommendations < 5):
       movie_recommendation = user_prediction.index(max(user_prediction))
+
       if movie_recommendation in not_watched_index:
         movie_id = movies_not_watched[movie_recommendation]
         movie_index = movie_indices[movie_id]
@@ -237,4 +223,6 @@ if __name__ == '__main__':
         movie_genres = movies[movie_index].genre
         print("%s) %s %s" % (str(recommendations + 1), movie_title, movie_genres))
         recommendations += 1
-      del user_prediction[movie_recommendation]
+
+      user_prediction[movie_recommendation] = 0.0
+

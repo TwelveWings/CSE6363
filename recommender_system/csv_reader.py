@@ -27,7 +27,7 @@ def read_movie_csv(file_name, movie_id = None):
         if movie_id is not None and int(row[0]) != movie_id:
           continue
 
-        movie_indices[int(row[0])] = i
+        movie_indices[int(row[0])] = i - 1
 
         # Create movie class using movieid, title, and genre
         movie = Movie(row[0], row[1], row[2])
