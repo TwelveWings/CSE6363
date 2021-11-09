@@ -16,7 +16,7 @@ def read_movie_csv(file_name, movie_id = None):
   genres = set([])
 
   try:
-    with open(file_name, newline='') as csvfile:
+    with open(file_name, newline='', encoding='utf-8') as csvfile:
       r = csv.reader(csvfile, delimiter=',', quotechar='"')
 
       for row in r:
@@ -64,7 +64,7 @@ def read_rating_csv(file_name, user_id = None):
   user_indices = {}
 
   try:
-    with open(file_name, newline='') as csvfile:
+    with open(file_name, newline='', encoding='utf-8') as csvfile:
       r = csv.reader(csvfile, delimiter=',', quotechar='"')
 
       for row in r:
