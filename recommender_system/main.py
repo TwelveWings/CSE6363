@@ -10,7 +10,7 @@ from recommender import find_similar_user_ratings, get_movies_based_on_preferenc
 
 def generate_matrix(u_index, u_id, recommenders, movies_in_top5, movies_watched, ratings):
   """
-  Generates a matrix from a given CSV file.
+  Generates a matrix from a the number of users and movies in top 5 genre.
   """
   matrix = []
   matrix_row = []

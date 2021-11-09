@@ -1,6 +1,10 @@
 import numpy as np
 
 def determine_user_preferences(user_id, user_index, movie_indices, ratings, movies, genres):
+  """
+  Creates a list of genres in movies, sorted by the number of times user_id has watched that
+  genre and the average rating per genre.
+  """
   start, end = user_index[user_id]
 
   user_ratings = ratings[start - 1 : end]
@@ -35,6 +39,9 @@ def determine_user_preferences(user_id, user_index, movie_indices, ratings, movi
   return genre_preferences
 
 def get_movies_user_watched_in_genres(user_id, user_index, movie_indices, ratings, movies, preferences):
+  """
+  Creates a list of movies watched by user_id in the top 5 genres.
+  """
   preferred_genres = set([])
   movies_watched_in_genres = set([])
   movie_watched_ratings = {}
@@ -57,6 +64,9 @@ def get_movies_user_watched_in_genres(user_id, user_index, movie_indices, rating
   return (movies_watched_in_genres, movie_watched_ratings)
 
 def find_similar_user_ratings(u_ids, u_id, user_index, ratings, movies_watched):
+  """
+  Creates a list of 9 users who have watched at least 70% of the same movies as u_id.
+  """
   other_users = u_ids.copy()
 
   other_users.remove(u_id)
@@ -89,6 +99,10 @@ def find_similar_user_ratings(u_ids, u_id, user_index, ratings, movies_watched):
   return recommenders
 
 def get_movies_based_on_preference(movies, preferences):
+  """
+  Creates a list of all movies in movies that are in the top 5 genres preferred by the
+  specified user.
+  """
   top5_genres = set([preference[0] for preference in preferences])
 
   movies_in_top5 = set([])
