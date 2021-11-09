@@ -54,10 +54,10 @@ if __name__ == '__main__':
   print("Loading users...")
   ratings, user_indices, rating_file_exists = read_rating_csv("ratings.csv")
 
-  user_ids = [i for i in range(1, ratings[-1].user_id)]
+  user_ids = [i for i in range(1, ratings[-1].user_id + 1)]
 
   while(True):
-    print("\nPlease enter user ID or enter '-1' to quit: ")
+    print("\nPlease enter user ID between 1 and %s or enter '-1' to quit: " % str(user_ids[-1]))
 
     try:
       user_id = int(input())
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     if user_id == -1:
       print("Program terminated.")
       break
-    elif user_id < -1 or user_id > len(user_ids):
+    elif user_id < -1 or user_id == 0 or user_id > len(user_ids):
       print("Invalid ID. Please try again.")
       continue
 
